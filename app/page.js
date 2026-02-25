@@ -27,7 +27,6 @@ async function getData() {
       fetchSheetCSV(SHEET2_ID, SHEET2_GID),
     ]);
 
-    // ── Sheet 2: find vehicle column ──
     const s2Headers = sheet2.length ? Object.keys(sheet2[0]) : [];
     const vehCol2 = s2Headers.find((h) =>
       VEH_HEADERS.some((v) => h.trim().toLowerCase() === v.toLowerCase())
@@ -43,7 +42,6 @@ async function getData() {
       return { error: `"${COMPANY_COL}" not found in Sheet 2. Found: ${s2Headers.join(" | ")}` };
     }
 
-    // Build vehicle → company map
     const vehicleToCompany = new Map();
     for (const row of sheet2) {
       const veh = (row[vehCol2] || "").trim().toUpperCase().replace(/\s+/g, "");
@@ -51,7 +49,6 @@ async function getData() {
       if (veh && co) vehicleToCompany.set(veh, co);
     }
 
-    // ── Sheet 1: find columns ──
     const s1Headers = sheet1.length ? Object.keys(sheet1[0]) : [];
     const vehCol1 =
       s1Headers.find((h) => h.trim().toLowerCase() === "vehicle number") ||
@@ -66,7 +63,6 @@ async function getData() {
       return { error: `"Vehicle Number" not found in Sheet 1. Found: ${s1Headers.join(" | ")}` };
     }
 
-    // ── Group by company ──
     const companyMap = new Map();
 
     for (const row of sheet1) {
@@ -74,7 +70,6 @@ async function getData() {
       if (!vehRaw) continue;
 
       const vehNorm = vehRaw.toUpperCase().replace(/\s+/g, "");
-      // Score from sheet1 — this is already out of 100
       const score   = scoreCol ? (parseFloat(row[scoreCol]) || 0) : 0;
       const company = vehicleToCompany.get(vehNorm) || "Other";
 
@@ -95,15 +90,12 @@ async function getData() {
 
     const companies = Array.from(companyMap.values());
 
-    // Compute avgScore, round totalScore, sort vehicles
     for (const c of companies) {
       c.avgScore   = c.vehicleCount > 0 ? c.totalScore / c.vehicleCount : 0;
       c.totalScore = Math.round(c.totalScore * 100) / 100;
-      // Sort vehicles by score descending
       c.vehicles.sort((a, b) => b.score - a.score);
     }
 
-    // Sort companies: Other last, rest by avgScore DESC
     companies.sort((a, b) => {
       if (a.company === "Other") return 1;
       if (b.company === "Other") return -1;
