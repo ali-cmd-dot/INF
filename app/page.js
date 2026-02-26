@@ -13,101 +13,66 @@ const VEH_HEADERS = [
   "VehicleNumber",
   "Chassis Number",
 ];
-
 const COMPANY_COL = "Running company/School";
 
 async function getData() {
   try {
-    if (!SHEET1_ID || !SHEET2_ID) {
-      return { error: "Missing SHEET1_ID or SHEET2_ID environment variables." };
-    }
+    if (!SHEET1_ID || !SHEET2_ID) return { error: "Missing SHEET1_ID or SHEET2_ID env vars." };
 
     const [sheet1, sheet2] = await Promise.all([
       fetchSheetCSV(SHEET1_ID, SHEET1_GID),
       fetchSheetCSV(SHEET2_ID, SHEET2_GID),
     ]);
 
-    const s2Headers = sheet2.length ? Object.keys(sheet2[0]) : [];
-    const vehCol2 = s2Headers.find((h) =>
-      VEH_HEADERS.some((v) => h.trim().toLowerCase() === v.toLowerCase())
-    );
-    if (!vehCol2) {
-      return { error: `Vehicle column not found in Sheet 2. Found: ${s2Headers.join(" | ")}` };
-    }
+    const s2H = sheet2.length ? Object.keys(sheet2[0]) : [];
+    const vehCol2 = s2H.find(h => VEH_HEADERS.some(v => h.trim().toLowerCase() === v.toLowerCase()));
+    if (!vehCol2) return { error: "Vehicle column not found in Sheet 2. Found: " + s2H.join(" | ") };
 
-    const companyCol2 = s2Headers.find(
-      (h) => h.trim().toLowerCase() === COMPANY_COL.toLowerCase()
-    );
-    if (!companyCol2) {
-      return { error: `"${COMPANY_COL}" not found in Sheet 2. Found: ${s2Headers.join(" | ")}` };
-    }
+    const coCol2 = s2H.find(h => h.trim().toLowerCase() === COMPANY_COL.toLowerCase());
+    if (!coCol2) return { error: '"' + COMPANY_COL + '" not found in Sheet 2. Found: ' + s2H.join(" | ") };
 
-    const vehicleToCompany = new Map();
+    const v2c = new Map();
     for (const row of sheet2) {
       const veh = (row[vehCol2] || "").trim().toUpperCase().replace(/\s+/g, "");
-      const co  = (row[companyCol2] || "").trim();
-      if (veh && co) vehicleToCompany.set(veh, co);
+      const co  = (row[coCol2]  || "").trim();
+      if (veh && co) v2c.set(veh, co);
     }
 
-    const s1Headers = sheet1.length ? Object.keys(sheet1[0]) : [];
-    const vehCol1 =
-      s1Headers.find((h) => h.trim().toLowerCase() === "vehicle number") ||
-      s1Headers.find((h) => h.toLowerCase().includes("vehicle"));
+    const s1H = sheet1.length ? Object.keys(sheet1[0]) : [];
+    const vehCol1 = s1H.find(h => h.trim().toLowerCase() === "vehicle number") || s1H.find(h => h.toLowerCase().includes("vehicle"));
+    if (!vehCol1) return { error: '"Vehicle Number" not found in Sheet 1. Found: ' + s1H.join(" | ") };
 
-    const scoreCol =
-      s1Headers.find((h) => h.trim().toLowerCase() === "scores") ||
-      s1Headers.find((h) => h.trim().toLowerCase() === "score") ||
-      null;
+    const scoreCol = s1H.find(h => h.trim().toLowerCase() === "scores") || s1H.find(h => h.trim().toLowerCase() === "score") || null;
 
-    if (!vehCol1) {
-      return { error: `"Vehicle Number" not found in Sheet 1. Found: ${s1Headers.join(" | ")}` };
-    }
-
-    const companyMap = new Map();
-
+    const map = new Map();
     for (const row of sheet1) {
       const vehRaw = (row[vehCol1] || "").trim();
       if (!vehRaw) continue;
-
-      const vehNorm = vehRaw.toUpperCase().replace(/\s+/g, "");
-      const score   = scoreCol ? (parseFloat(row[scoreCol]) || 0) : 0;
-      const company = vehicleToCompany.get(vehNorm) || "Other";
-
-      if (!companyMap.has(company)) {
-        companyMap.set(company, {
-          company,
-          totalScore: 0,
-          vehicleCount: 0,
-          vehicles: [],
-        });
-      }
-
-      const entry = companyMap.get(company);
-      entry.totalScore   += score;
-      entry.vehicleCount += 1;
-      entry.vehicles.push({ vehicleNumber: vehRaw, score });
+      const vehN  = vehRaw.toUpperCase().replace(/\s+/g, "");
+      const score = scoreCol ? (parseFloat(row[scoreCol]) || 0) : 0;
+      const co    = v2c.get(vehN) || "Other";
+      if (!map.has(co)) map.set(co, { company: co, totalScore: 0, vehicleCount: 0, vehicles: [] });
+      const e = map.get(co);
+      e.totalScore   += score;
+      e.vehicleCount += 1;
+      e.vehicles.push({ vehicleNumber: vehRaw, score });
     }
 
-    const companies = Array.from(companyMap.values());
-
+    const companies = Array.from(map.values());
     for (const c of companies) {
       c.avgScore   = c.vehicleCount > 0 ? c.totalScore / c.vehicleCount : 0;
       c.totalScore = Math.round(c.totalScore * 100) / 100;
       c.vehicles.sort((a, b) => b.score - a.score);
     }
-
     companies.sort((a, b) => {
       if (a.company === "Other") return 1;
       if (b.company === "Other") return -1;
       return b.avgScore - a.avgScore;
     });
 
-    const totalVehicles = sheet1.filter((r) => (r[vehCol1] || "").trim()).length;
-
+    const totalVehicles = sheet1.filter(r => (r[vehCol1] || "").trim()).length;
     return { companies, totalVehicles };
-
   } catch (err) {
-    console.error("getData error:", err);
     return { error: err.message || "Unknown error" };
   }
 }
