@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { Search, RefreshCw, Building2, Car, TrendingUp, AlertCircle } from "lucide-react";
 import ScoreCard from "./ScoreCard";
-import CautioLogo from "./CautioLogo";
 
 export default function Dashboard({ data }) {
   const [search, setSearch] = useState("");
@@ -45,7 +44,6 @@ export default function Dashboard({ data }) {
 
   const A = "#F59E0B";
   const C = "#0C1525";
-  const B = "#1A3050";
 
   return (
     <div style={{ minHeight: "100vh", background: "#060B16" }}>
@@ -54,10 +52,14 @@ export default function Dashboard({ data }) {
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(6,11,22,0.96)", backdropFilter: "blur(20px)", borderBottom: "1px solid #1A3050" }}>
         <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 32px", height: 68, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
 
-          {/* Logo — inline SVG, always visible */}
+          {/* ── LOGO ── img tag, public/cautio_shield.webp */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 13, background: "linear-gradient(145deg,#F59E0B,#B45309)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 18px rgba(245,158,11,0.45)", flexShrink: 0 }}>
-              <CautioLogo size={26} />
+            <div style={{ width: 44, height: 44, borderRadius: 13, background: "linear-gradient(145deg,#F59E0B,#B45309)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 18px rgba(245,158,11,0.45)", flexShrink: 0, overflow: "hidden" }}>
+              <img
+                src="/cautio_shield.webp"
+                alt="Cautio"
+                style={{ width: 32, height: 32, objectFit: "contain", display: "block" }}
+              />
             </div>
             <div>
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 16, color: "#E8EEF6", letterSpacing: "-0.02em", lineHeight: 1.1 }}>CAUTIO</div>
@@ -164,7 +166,7 @@ export default function Dashboard({ data }) {
         {/* Footer */}
         <div style={{ marginTop: 64, paddingTop: 28, borderTop: "1px solid #1A3050", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#1A3050", flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <CautioLogo size={18} />
+            <img src="/cautio_shield.webp" alt="Cautio" style={{ width: 20, height: 20, objectFit: "contain", opacity: 0.5 }} />
             <span>© 2025 Cautio · Fleet Intelligence Platform</span>
           </div>
           <span>Live data · Refreshed on every load</span>
